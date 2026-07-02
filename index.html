@@ -77,6 +77,43 @@ footer { text-align:center; color:var(--gray); font-size:12.5px; padding:26px; }
   .feature, .flow, .trio, .trust-grid, .gallery { grid-template-columns:1fr; }
   .feature.reverse { direction:rtl; }
 }
+
+/* ===== visual upgrade ===== */
+html { scroll-behavior:smooth; }
+.hero { background:
+  radial-gradient(1100px 480px at 82% -12%, rgba(255,255,255,.20), transparent 60%),
+  radial-gradient(900px 420px at 8% 112%, rgba(0,0,0,.18), transparent 60%),
+  linear-gradient(135deg, var(--purple-d), var(--purple) 60%, #ff8a3d); }
+h2.sec::after { content:''; display:block; width:56px; height:4px; border-radius:2px; background:linear-gradient(90deg, var(--purple), #ff8a3d); margin:14px auto 0; }
+.brand-bar { position:sticky; top:0; z-index:500; transition:box-shadow .3s ease; }
+.brand-bar.scrolled { box-shadow:0 4px 22px rgba(17,24,39,.10); }
+.step, .phone, .gcard, .tcard { transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease; }
+.step:hover, .phone:hover, .gcard:hover { transform:translateY(-5px); box-shadow:0 14px 34px rgba(194,65,12,.14); border-color:#fed7aa; }
+.tcard:hover { transform:translateY(-4px); box-shadow:0 10px 26px rgba(17,24,39,.09); }
+.feature-shot img, .hero-shot img, .gcard img, .phone img { transition:transform .35s ease, box-shadow .35s ease; }
+.feature-shot img:hover { transform:scale(1.015); box-shadow:0 18px 50px rgba(194,65,12,.22); }
+[data-lb] { cursor:zoom-in; }
+[data-lb]:focus-visible { outline:3px solid var(--purple); outline-offset:3px; }
+/* scroll reveal */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { opacity:0; transform:translateY(26px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity:1; transform:none; }
+  @keyframes heroUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:none; } }
+  .hero h1 { animation:heroUp .7s ease both; }
+  .hero .sub { animation:heroUp .7s ease .15s both; }
+  .hero .stats { animation:heroUp .7s ease .3s both; }
+  .hero-shot { animation:heroUp .9s ease .45s both; }
+}
+/* lightbox */
+.lb-overlay { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; flex-direction:column; gap:14px; padding:30px 22px; background:rgba(17,24,39,.93); cursor:zoom-out; opacity:0; transition:opacity .25s ease; }
+.lb-overlay.show { display:flex; }
+.lb-overlay.open { opacity:1; }
+.lb-overlay img { max-width:min(1500px, 94vw); max-height:86vh; border-radius:10px; box-shadow:0 30px 90px rgba(0,0,0,.55); transform:scale(.96); transition:transform .25s ease; cursor:default; }
+.lb-overlay.open img { transform:none; }
+.lb-cap { color:#fff; font-size:16px; font-weight:600; text-align:center; }
+.lb-close { position:absolute; top:16px; left:20px; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); color:#fff; font-size:24px; line-height:1; cursor:pointer; transition:background .2s ease; }
+.lb-close:hover { background:rgba(255,255,255,.25); }
+.lb-hint { color:rgba(255,255,255,.6); font-size:12.5px; }
 </style>
 </head>
 <body>
@@ -277,5 +314,80 @@ footer { text-align:center; color:var(--gray); font-size:12.5px; padding:26px; }
 </div>
 
 <footer>המסך והנתונים המוצגים הם מסביבת דמו. © 2026 INSHOP Suppliers — מסמך שיווקי-תיאורי.</footer>
+
+<script>
+(function(){
+  'use strict';
+  /* sticky brand bar shadow */
+  var bar = document.querySelector('.brand-bar');
+  if (bar) window.addEventListener('scroll', function(){ bar.classList.toggle('scrolled', window.scrollY > 8); }, { passive:true });
+
+  /* lightbox */
+  var overlay = document.createElement('div');
+  overlay.className = 'lb-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.innerHTML = '<button class="lb-close" aria-label="סגירה">×</button><img alt=""><div class="lb-cap"></div><div class="lb-hint">לחיצה בכל מקום או Esc לסגירה</div>';
+  document.body.appendChild(overlay);
+  var lbImg = overlay.querySelector('img'), lbCap = overlay.querySelector('.lb-cap');
+  var lastFocus = null;
+
+  function openLb(src, cap, origin){
+    lastFocus = origin || null;
+    lbImg.src = src;
+    lbImg.alt = cap || '';
+    lbCap.textContent = cap || '';
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ overlay.classList.add('open'); }); });
+    overlay.querySelector('.lb-close').focus();
+  }
+  function closeLb(){
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(function(){ overlay.classList.remove('show'); lbImg.src = ''; }, 260);
+    if (lastFocus) lastFocus.focus();
+  }
+  overlay.addEventListener('click', closeLb);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && overlay.classList.contains('show')) closeLb(); });
+
+  function capFor(img){
+    var c;
+    if ((c = img.closest('.feature'))) { var h3 = c.querySelector('h3'); if (h3) return h3.textContent.trim(); }
+    if ((c = img.closest('.phone'))) { var h4 = c.querySelector('h4'); if (h4) return h4.textContent.trim(); }
+    if ((c = img.closest('.gcard'))) { var b = c.querySelector('.cap b'); if (b) return b.textContent.trim(); }
+    if (img.closest('.hero-shot')) return 'דשבורד הניהול של INSHOP Suppliers';
+    return img.alt || '';
+  }
+
+  var thumbs = document.querySelectorAll('.hero-shot img, .feature-shot img, .phone img, .gcard img');
+  thumbs.forEach(function(img){
+    img.setAttribute('data-lb', '');
+    img.setAttribute('tabindex', '0');
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', 'הגדלת תמונה: ' + capFor(img));
+    img.addEventListener('click', function(){ openLb(img.src, capFor(img), img); });
+    img.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLb(img.src, capFor(img), img); }
+    });
+  });
+
+  /* scroll reveal with per-row stagger */
+  var prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!prefersReduce && 'IntersectionObserver' in window) {
+    var els = document.querySelectorAll('.step, .feature, .phone, .tcard, .gcard, h2.sec, p.sec-sub, .video-demo');
+    els.forEach(function(el){
+      el.classList.add('reveal');
+      var sibs = Array.prototype.filter.call(el.parentElement.children, function(s){ return s.classList.contains('reveal'); });
+      var i = sibs.indexOf(el);
+      if (i > 0) el.style.transitionDelay = Math.min(i % 3 * 90, 270) + 'ms';
+    });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(function(el){ io.observe(el); });
+  }
+})();
+</script>
 </body>
 </html>
